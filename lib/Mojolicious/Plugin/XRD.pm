@@ -31,7 +31,7 @@ sub register {
       unless (defined $xrd) {
 	$status = 404;
 	$xrd = $c->new_xrd;
-	$xrd->subject($res);
+	$xrd->subject("$res");
       }
 
       # rel parameter
@@ -108,12 +108,12 @@ Mojolicious::Plugin::XRD - Render XRD documents with Mojolicious
 =head1 DESCRIPTION
 
 L<Mojolicious::Plugin::XRD> is a plugin to support
-L<Extensible Resource Descriptor|http://docs.oasis-open.org/xri/xrd/v1.0/xrd-1.0.html> documents,
-through L<XML::Loy::XRD>.
+L<Extensible Resource Descriptor|http://docs.oasis-open.org/xri/xrd/v1.0/xrd-1.0.html> documents through L<XML::Loy::XRD>.
 
 Additionally it supports the C<rel> parameter of the
 L<WebFinger|http://tools.ietf.org/html/draft-ietf-appsawg-webfinger>
 specification.
+
 
 =head1 METHODS
 
@@ -150,13 +150,13 @@ document.
 
 Returns a new L<XML::Loy::XRD> object without extensions.
 
+
 =head1 CAVEATS
 
 There are different versions of XRD and JRD
-with different Mime-Types defined.
-You may have to pay attention, which version is
-needed in your use case.
-
+with different MIME types defined.
+In some cases you may have to change the MIME type
+manually.
 
 =head1 DEPENDENCIES
 
