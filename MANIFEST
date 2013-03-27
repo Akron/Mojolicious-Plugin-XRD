@@ -1,0 +1,6 @@
+lib/Mojolicious/Plugin/XRD.pm
+t/XRD.t
+Changes
+MANIFEST
+LICENSE
+Makefile.PL
