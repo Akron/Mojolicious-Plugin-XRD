@@ -14,7 +14,7 @@ WriteMakefile(
   },
   PREREQ_PM => {
     'Mojolicious' => 3.86,
-    'Mojolicious::Plugin::XML::Loy' => 0.02
+    'Mojolicious::Plugin::XML::Loy' => 0.04
   },
   LICENSE      => 'perl',
   META_MERGE   => {
