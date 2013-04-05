@@ -103,14 +103,22 @@ sub _get_xrd {
   my $c = shift;
   my $resource = Mojo::URL->new( shift );
 
+  # No valid resource
+  return unless $resource->host;
+
+  my $header = {};
+  if ($_[0] && ref $_[0] && ref $_[0] eq 'HASH') {
+    $header = shift;
+  };
+
   # Check if security is forced
-  my $secure = $_[-1] && $_[-1] eq '-secure' ? pop : 0;
+  my $prot = $resource->protocol;
+  my $secure;
+  $secure = 1 if $prot && $prot eq 'https';
 
   # Get callback
   my $cb = pop if ref($_[-1]) && ref($_[-1]) eq 'CODE';
 
-  my $prot = $resource->protocol;
-  $secure = 1 if $prot && $prot eq 'https';
 
   # Build relations parameter
   my $rel;
@@ -131,7 +139,7 @@ sub _get_xrd {
   unless ($cb) {
 
     # Fetch Host-Meta XRD - first try ssl
-    my $tx = $ua->get($resource);
+    my $tx = $ua->get($resource => $header);
     my $xrd_res;
 
     # Transaction was not successful
@@ -152,7 +160,7 @@ sub _get_xrd {
       $ua->max_redirects(3);
 
       # Then try insecure
-      $tx = $ua->get($resource);
+      $tx = $ua->get($resource => $header);
 
       # Transaction was not successful
       return unless $xrd_res = $tx->success;
@@ -161,15 +169,15 @@ sub _get_xrd {
       return unless $xrd_res->is_status_class(200);
     };
 
-    # Parse hostmeta document
-    $xrd = $c->new_xrd($xrd_res->body);
-    # $xrd->filter_relations($rel) if $rel;
+    # Parse xrd document
+    $xrd = $c->new_xrd($xrd_res->body) or return;
+
+    # Filter relations
+    $xrd = $xrd->filter_rel($rel) if $rel;
+
+    # Return xrd
     return $xrd;
   };
-
-  return;
-
-  my ($host, $host_hm_path);
 
   # Non-blocking
   # Create delay for https with or without redirection
@@ -178,22 +186,25 @@ sub _get_xrd {
       my $delay = shift;
 
       # Get with https - possibly without redirects
-      $ua->get('https://' . $host_hm_path => $delay->begin);
+      $ua->get($resource => $header => $delay->begin);
     },
     sub {
-      my $delay = shift;
-      my $tx = shift;
+      my ($delay, $tx) = @_;
 
       # Get response
-      if (my $host_hm = $tx->success) {
+      if (my $xrd_res = $tx->success) {
 
 	# Fine
-	if ($host_hm->is_status_class(200)) {
+	if ($xrd_res->is_status_class(200)) {
 
-	  # Parse hostmeta document
-	  return $cb->(
-	    _parse_hostmeta($c, $host, $host_hm, $rel)
-	  );
+	  # Parse xrd document
+	  $xrd = $c->new_xrd($xrd_res->body) or return $cb->(undef);
+
+	  # Filter relations
+	  $xrd = $xrd->filter_rel($rel) if $rel;
+
+	  # Send to callback
+	  return $cb->($xrd);
 	};
 
 	# Only support secure retrieval
@@ -205,32 +216,34 @@ sub _get_xrd {
 	return $cb->(undef);
       };
 
+      # Was already insecure
+      return if $resource->protocol eq 'http';
+
       # Try http with redirects
       $delay->steps(
 	sub {
 	  my $delay = shift;
 
+	  $resource->scheme('http');
+
 	  # Get with http and redirects
-	  $ua->max_redirects(3)
-	    ->get(
-	      'http://' . $host_hm_path =>
-		$delay->begin
-	      );
+	  $ua->max_redirects(3);
+	  $ua->get($resource => $header => $delay->begin );
 	},
 	sub {
 	  my $delay = shift;
 
 	  # Transaction was successful
-	  if (my $host_hm = pop->success) {
+	  if (my $xrd_res = pop->success) {
 
-	    # Retrieval was not successful
-	    if ($host_hm->is_status_class(200)) {
+	    # Parse xrd document
+	    $xrd = $c->new_xrd($xrd_res->body) or return $cb->(undef);
 
-	      # Parse hostmeta document
-	      return $cb->(
-		_parse_hostmeta($c, $host, $host_hm, $rel)
-	      );
-	    }
+	    # Filter relations
+	    $xrd = $xrd->filter_rel($rel) if $rel;
+
+	    # Send to callback
+	    return $cb->($xrd);
 	  };
 
 	  # Fail
@@ -286,6 +299,9 @@ Mojolicious::Plugin::XRD - Render XRD documents with Mojolicious
   #   "links":[{"rel":"profile","href":"\/me.html"}]
   # }
 
+  my $gmail_hm = $c->get_xrd('//gmail.com/.well-known/host-meta');
+  print $gmail_hm->link('lrdd')->attrs('template');
+  # http://profiles.google.com/_/webfinger/?q={uri}
 
 =head1 DESCRIPTION
 
@@ -312,6 +328,53 @@ Called when registering the plugin.
 
 =head1 HELPERS
 
+=head2 new_xrd
+
+  # In Controller:
+  my $xrd = $self->new_xrd;
+
+Returns a new L<XML::Loy::XRD> object without extensions.
+
+
+=head2 get_xrd
+
+  # In Controller:
+  my $xrd = $self->get_xrd('//gmail.com/.well-known/host-meta');
+
+  # With relation restrictions and security flag
+  $xrd = $self->get_xrd('https://gmail.com/.well-known/host-meta' => ['lrdd']);
+
+  # With additional headers
+  $xrd = $self->get_xrd('https://gmail.com/.well-known/host-meta' => {
+    'X-My-HTTP-Header' => 'Just for Fun'
+  } => ['lrdd']);
+
+  # Non-blocking
+  $self->get_xrd('//gmail.com/.well-known/host-meta' => sub {
+    my $xrd = shift;
+    $xrd->extension('XML::Loy::HostMeta');
+    print $xrd->host;
+  });
+
+Fetches an XRD document from a given resource and returns it as
+L<XML::Loy::XRD> document.
+
+Expects a valid URL. In case no scheme is given (e.g., C<//gmail.com>),
+the method will first try to fetch the resource with C<https> and
+on failure fetches the resource with C<http>, supporting redirections.
+If the given scheme is C<https>, the discovery will be secured,
+even disallowing redirections.
+The second argument may be a hash reference containing HTTP headers.
+An additional array reference may limit the relations to be retrieved
+(see the L<WebFinger|http://tools.ietf.org/html/draft-ietf-appsawg-webfinger>
+specification for further explanation).
+
+This method can be used in a blocking or non-blocking way.
+For non-blocking retrieval, pass a callback function as the
+last argument.
+
+
+
 =head2 render_xrd
 
   # In Controllers
@@ -323,14 +386,6 @@ in C<xml> or in C<json> notation, depending on the request.
 If an XRD object is empty, it renders a C<404> error
 and accepts a second parameter as the subject of the error
 document.
-
-
-=head2 new_xrd
-
-  # In Controller:
-  my $xrd = $self->new_xrd;
-
-Returns a new L<XML::Loy::XRD> object without extensions.
 
 
 =head1 CAVEATS

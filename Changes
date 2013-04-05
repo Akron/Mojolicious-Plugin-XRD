@@ -1,3 +1,6 @@
+0.04 2013-04-06
+        - Added get_xrd() method.
+
 0.03 2013-03-29
         - Update dependency.
 
