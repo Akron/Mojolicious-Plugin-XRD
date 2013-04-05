@@ -2,7 +2,17 @@ package Mojolicious::Plugin::XRD;
 use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::Util qw/quote/;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
+
+# Todo: Support
+#  $self->render_xrd( $xrd => {
+#    resource => 'acct:akron@sojolicio.us',
+#    expires  => (30 * 24 * 60 * 60),
+#    cache    => ...,
+#    chi      => ...
+#  });
+
+my $UA_NAME = __PACKAGE__ . ' v' . $VERSION;
 
 # Register Plugin
 sub register {
@@ -78,12 +88,160 @@ sub register {
       );
     });
 
+  $mojo->helper( get_xrd => \&_get_xrd );
+
   # Add new_xrd helper
   unless (exists $mojo->renderer->helpers->{'new_xrd'}) {
     $mojo->plugin('XML::Loy' => {
       new_xrd => ['XRD']
     });
   };
+};
+
+# Get XRD document
+sub _get_xrd {
+  my $c = shift;
+  my $resource = Mojo::URL->new( shift );
+
+  # Check if security is forced
+  my $secure = $_[-1] && $_[-1] eq '-secure' ? pop : 0;
+
+  # Get callback
+  my $cb = pop if ref($_[-1]) && ref($_[-1]) eq 'CODE';
+
+  my $prot = $resource->protocol;
+  $secure = 1 if $prot && $prot eq 'https';
+
+  # Build relations parameter
+  my $rel;
+  $rel = shift if $_[0] && ref $_[0] eq 'ARRAY';
+
+  # Get secure user agent
+  my $ua = Mojo::UserAgent->new(
+    name => $UA_NAME,
+    max_redirects => ($secure ? 0 : 3)
+  );
+
+  my $xrd;
+
+  # Set to secure, if not defined
+  $resource->scheme('https') unless $resource->scheme;
+
+  # Is blocking
+  unless ($cb) {
+
+    # Fetch Host-Meta XRD - first try ssl
+    my $tx = $ua->get($resource);
+    my $xrd_res;
+
+    # Transaction was not successful
+    return unless $xrd_res = $tx->success;
+
+    unless ($xrd_res->is_status_class(200)) {
+
+      # Only support secure retrieval
+      return if $secure;
+
+      # Was already insecure
+      return if $resource->protocol eq 'http';
+
+      # Make request insecure
+      $resource->scheme('http');
+
+      # Update insecure max_redirects;
+      $ua->max_redirects(3);
+
+      # Then try insecure
+      $tx = $ua->get($resource);
+
+      # Transaction was not successful
+      return unless $xrd_res = $tx->success;
+
+      # Retrieval was successful
+      return unless $xrd_res->is_status_class(200);
+    };
+
+    # Parse hostmeta document
+    $xrd = $c->new_xrd($xrd_res->body);
+    # $xrd->filter_relations($rel) if $rel;
+    return $xrd;
+  };
+
+  return;
+
+  my ($host, $host_hm_path);
+
+  # Non-blocking
+  # Create delay for https with or without redirection
+  my $delay = Mojo::IOLoop->delay(
+    sub {
+      my $delay = shift;
+
+      # Get with https - possibly without redirects
+      $ua->get('https://' . $host_hm_path => $delay->begin);
+    },
+    sub {
+      my $delay = shift;
+      my $tx = shift;
+
+      # Get response
+      if (my $host_hm = $tx->success) {
+
+	# Fine
+	if ($host_hm->is_status_class(200)) {
+
+	  # Parse hostmeta document
+	  return $cb->(
+	    _parse_hostmeta($c, $host, $host_hm, $rel)
+	  );
+	};
+
+	# Only support secure retrieval
+	return $cb->(undef) if $secure;
+      }
+
+      # Fail
+      else {
+	return $cb->(undef);
+      };
+
+      # Try http with redirects
+      $delay->steps(
+	sub {
+	  my $delay = shift;
+
+	  # Get with http and redirects
+	  $ua->max_redirects(3)
+	    ->get(
+	      'http://' . $host_hm_path =>
+		$delay->begin
+	      );
+	},
+	sub {
+	  my $delay = shift;
+
+	  # Transaction was successful
+	  if (my $host_hm = pop->success) {
+
+	    # Retrieval was not successful
+	    if ($host_hm->is_status_class(200)) {
+
+	      # Parse hostmeta document
+	      return $cb->(
+		_parse_hostmeta($c, $host, $host_hm, $rel)
+	      );
+	    }
+	  };
+
+	  # Fail
+	  return $cb->(undef);
+	});
+    }
+  );
+
+  # Wait if IOLoop is not running
+  $delay->wait unless Mojo::IOLoop->is_running;
+  return;
 };
 
 
