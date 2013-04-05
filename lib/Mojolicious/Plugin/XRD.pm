@@ -81,9 +81,10 @@ sub register {
       );
     });
 
+  # Add 'get_xrd' helper
   $mojo->helper( get_xrd => \&_get_xrd );
 
-  # Add new_xrd helper
+  # Add 'new_xrd' helper
   unless (exists $mojo->renderer->helpers->{'new_xrd'}) {
     $mojo->plugin('XML::Loy' => {
       new_xrd => ['XRD']
