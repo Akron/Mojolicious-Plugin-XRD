@@ -50,16 +50,9 @@ sub register {
 
       # rel parameter
       elsif ($c->param('rel')) {
-	$xrd = $c->new_xrd($xrd->to_xml);
 
-	# Create CSS selector for unwanted relations
-	my $rel = 'Link:' . join(
-	  ':',
-	  map { 'not([rel=' . quote($_) . '])'} $c->param('rel')
-	);
-
-	# Delete all unwanted relations
-	$xrd->find($rel)->pluck('remove');
+	# Clone and filter relations
+	$xrd = $xrd->filter_rel( $c->param('rel') );
       };
 
       # content negotiation
@@ -373,6 +366,7 @@ This method can be used in a blocking or non-blocking way.
 For non-blocking retrieval, pass a callback function as the
 last argument.
 
+B<This method is experimental and may change wihout warnings.>
 
 
 =head2 render_xrd

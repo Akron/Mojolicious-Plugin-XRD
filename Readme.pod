@@ -108,6 +108,7 @@ This method can be used in a blocking or non-blocking way.
 For non-blocking retrieval, pass a callback function as the
 last argument.
 
+B<This method is experimental and may change wihout warnings.>
 
 
 =head2 render_xrd
