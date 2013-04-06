@@ -7,7 +7,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
   NAME         => 'Mojolicious::Plugin::XRD',
   AUTHOR       => 'Nils Diewald',
-  ABSTRACT     => 'Render XRD documents with Mojolicious',
+  ABSTRACT     => 'XRD Document Handling with Mojolicious',
   VERSION_FROM => 'lib/Mojolicious/Plugin/XRD.pm',
   BUILD_REQUIRES => {
     'Test::More' => 0

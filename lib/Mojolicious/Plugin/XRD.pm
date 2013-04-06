@@ -261,7 +261,7 @@ __END__
 
 =head1 NAME
 
-Mojolicious::Plugin::XRD - Render XRD documents with Mojolicious
+Mojolicious::Plugin::XRD - XRD Document Handling with Mojolicious
 
 
 =head1 SYNOPSIS
