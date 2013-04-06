@@ -87,7 +87,7 @@ sub register {
   # Add 'new_xrd' helper
   unless (exists $mojo->renderer->helpers->{'new_xrd'}) {
     $mojo->plugin('XML::Loy' => {
-      new_xrd => ['XRD']
+      new_xrd => [-XRD]
     });
   };
 };
@@ -346,7 +346,7 @@ Returns a new L<XML::Loy::XRD> object without extensions.
   # Non-blocking
   $self->get_xrd('//gmail.com/.well-known/host-meta' => sub {
     my $xrd = shift;
-    $xrd->extension('XML::Loy::HostMeta');
+    $xrd->extension(-HostMeta);
     print $xrd->host;
   });
 

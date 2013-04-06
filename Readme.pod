@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Mojolicious::Plugin::XRD - Render XRD documents with Mojolicious
+Mojolicious::Plugin::XRD - XRD Document Handling with Mojolicious
 
 
 =head1 SYNOPSIS
@@ -87,7 +87,7 @@ Returns a new L<XML::Loy::XRD> object without extensions.
   # Non-blocking
   $self->get_xrd('//gmail.com/.well-known/host-meta' => sub {
     my $xrd = shift;
-    $xrd->extension('XML::Loy::HostMeta');
+    $xrd->extension(-HostMeta);
     print $xrd->host;
   });
 
