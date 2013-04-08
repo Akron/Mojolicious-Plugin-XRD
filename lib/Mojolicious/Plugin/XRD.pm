@@ -15,8 +15,15 @@ our $VERSION = '0.05';
 #
 # - Add Acceptance for XRD and JRD and JSON as a header
 
-
+# UserAgent name
 my $UA_NAME = __PACKAGE__ . ' v' . $VERSION;
+
+# UserAgent maximum redirects
+my $UA_MAX_REDIRECTS   = 10;
+
+# UserAgent connect timeout
+my $UA_CONNECT_TIMEOUT = 7;
+
 
 # Register Plugin
 sub register {
@@ -125,7 +132,8 @@ sub _get_xrd {
   # Get secure user agent
   my $ua = Mojo::UserAgent->new(
     name => $UA_NAME,
-    max_redirects => ($secure ? 0 : 10)
+    max_redirects => ($secure ? 0 : $UA_MAX_REDIRECTS),
+    connect_timeout => $UA_CONNECT_TIMEOUT
   );
 
   my $xrd;
@@ -155,7 +163,7 @@ sub _get_xrd {
       $resource->scheme('http');
 
       # Update insecure max_redirects;
-      $ua->max_redirects(3);
+      $ua->max_redirects($UA_MAX_REDIRECTS);
 
       # Then try insecure
       $tx = $ua->get($resource => $header);
@@ -226,7 +234,7 @@ sub _get_xrd {
 	  $resource->scheme('http');
 
 	  # Get with http and redirects
-	  $ua->max_redirects(3);
+	  $ua->max_redirects($UA_MAX_REDIRECTS);
 	  $ua->get($resource => $header => $delay->begin );
 	},
 	sub {
