@@ -1,4 +1,8 @@
-0.04 2013-04-06
+0.05 2013-04-08
+        - Raised max_redirections to 10.
+
+0.04 2013-04-07
+        - Added headers to get_xrd().
 
 0.03 2013-04-06
         - Added get_xrd() method.
