@@ -53,10 +53,10 @@ sub register {
       my $status = 200;
 
       # Not found
-      unless (defined $xrd) {
+      if (!defined $xrd || !ref($xrd)) {
 	$status = 404;
 	$xrd = $c->new_xrd;
-	$xrd->subject("$res");
+	$xrd->subject("$res") if $res;
       }
 
       # rel parameter

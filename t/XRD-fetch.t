@@ -28,14 +28,14 @@ $app->get_xrd(
 
 pass('No life tests');
 
-done_testing;
-exit;
+#done_testing;
+#exit;
 
 my ($xrd, $headers) = $app->get_xrd('//yahoo.com' . $wk);
 
 is($xrd->subject, 'yahoo.com', 'Title');
 is($headers->content_type, 'text/plain; charset=utf-8', 'Content Type');
-is($headers->header('Server'), 'YTS/1.20.13', 'Serber');
+is($headers->header('Server'), 'YTS/1.20.13', 'Server');
 is($headers->content_length, 998, 'Content Length');
 
 
