@@ -2,7 +2,7 @@ package Mojolicious::Plugin::XRD;
 use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::Util qw/quote/;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 
 # Todo: Support
@@ -107,6 +107,9 @@ sub register {
 sub _get_xrd {
   my $c = shift;
   my $resource = Mojo::URL->new( shift );
+
+  # Trim tail
+  pop while @_ && !defined $_[-1];
 
   # No valid resource
   return unless $resource->host;
