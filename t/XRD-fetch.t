@@ -28,8 +28,8 @@ $app->get_xrd(
 
 pass('No life tests');
 
-#done_testing;
-#exit;
+done_testing;
+exit;
 
 my ($xrd, $headers) = $app->get_xrd('//yahoo.com' . $wk);
 
