@@ -110,7 +110,10 @@ specification for further explanation).
 
 This method can be used in a blocking or non-blocking way.
 For non-blocking retrieval, pass a callback function as the
-last argument.
+last argument. As the first passed response is the L<XML::Loy::XRD>
+document, you have to use an offset of C<0> in
+L<begin|Mojo::IOLoop::Delay/begin> for parallel requests using
+L<Mojo::IOLoop::Delay>.
 
 B<This method is experimental and may change wihout warnings.>
 
