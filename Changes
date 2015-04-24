@@ -1,3 +1,9 @@
+0.14 2015-04-24
+        - Updated dependencies.
+
+0.13 2015-01-26
+        - Updated XML::Loy dependency.
+
 0.12 2014-12-09
         - Remove deprecated oo-json usage.
 	- Remove route definitions per "route".
