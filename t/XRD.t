@@ -110,8 +110,6 @@ my $jrd_doc = <<'JRD';
 }
 JRD
 
-
-
 my $xrd_doc = <<'XRD';
 <?xml version='1.0' encoding='UTF-8'?>
 <XRD xmlns='http://docs.oasis-open.org/ns/xri/xrd-1.0'
@@ -137,6 +135,7 @@ my $xrd_doc = <<'XRD';
         template='http://example.com/copyright?id={uri}' />
 </XRD>
 XRD
+
 
 $xrd = $app->new_xrd($xrd_doc);
 
@@ -244,6 +243,17 @@ $t->head_ok('/no_test?res=versuch&format=jrd')
   ->content_type_is('application/jrd+json')
   ->header_is('Access-Control-Allow-Origin' => '*')
   ->content_is('');
+
+$xrd_doc = <<'XRD';
+<?xml version='1.0'?>
+<XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Subject>acct:this.is.an@example.com</Subject>
+  <Link href="http://www-opensocial.googleusercontent.com/api/people/" rel="http://portablecontacts.net/spec/1.0" />
+</XRD>
+XRD
+
+$xrd = $app->new_xrd($xrd_doc);
+is($xrd->subject, 'acct:this.is.an@example.com', 'Subject');
 
 done_testing;
 
