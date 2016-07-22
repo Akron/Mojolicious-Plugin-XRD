@@ -152,13 +152,22 @@ is_deeply(
 );
 
 $app->routes->any('/test')->to(
-  cb => sub { shift->render_xrd($xrd) }
+  cb => sub {
+    my $c = shift;
+    my $warn;
+    local $SIG{__WARN__} = sub {
+      $warn = shift;
+    };
+    my $return = $c->render_xrd($xrd);
+    like($warn, qr!^\Qrender_xrd is deprecated in favor of reply->xrd\E!, 'Deprecation test');
+    return $return;
+  }
 );
 
 $app->routes->any('/no_test')->to(
   cb => sub {
     my $c = shift;
-    return $c->render_xrd(undef, $c->param('res'))
+    return $c->reply->xrd(undef, $c->param('res'))
   });
 
 $t->get_ok('/test')

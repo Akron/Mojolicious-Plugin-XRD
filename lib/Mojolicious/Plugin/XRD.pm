@@ -1,11 +1,11 @@
 package Mojolicious::Plugin::XRD;
 use Mojo::Base 'Mojolicious::Plugin';
-use Mojo::Util qw/quote/;
+use Mojo::Util qw/quote deprecated/;
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 # Todo: Support
-#  $self->render_xrd( $xrd => {
+#  $self->reply->xrd( $xrd => {
 #    resource => 'acct:akron@sojolicio.us',
 #    expires  => (30 * 24 * 60 * 60),
 #    cache    => ...,
@@ -34,64 +34,73 @@ sub register {
     $_->type(xrd => 'application/xrd+xml');
   };
 
-  # Add 'render_xrd' helper
+  my $reply_xrd = sub {
+    my ($c, $xrd, $res) = @_;
+
+    # Define xrd or jrd
+    unless ($c->stash('format')) {
+      $c->stash('format' => scalar $c->param('format'));
+    };
+
+    # Add CORS header
+    $c->res->headers->header(
+      'Access-Control-Allow-Origin' => '*'
+    );
+
+    my $status = 200;
+
+    # Not found
+    if (!defined $xrd || !ref($xrd)) {
+      $status = 404;
+      $xrd = $c->helpers->new_xrd;
+      $xrd->subject("$res") if $res;
+    }
+
+    # rel parameter
+    elsif ($c->param('rel')) {
+
+      # Clone and filter relations
+      $xrd = $xrd->filter_rel( $c->every_param('rel') );
+    };
+
+    my $head_data = $c->req->method eq 'HEAD' ? '' : undef;
+
+    # content negotiation
+    return $c->respond_to(
+
+      # JSON request
+      json => sub { $c->render(
+	status => $status,
+	data   => $head_data // $xrd->to_json,
+	format => 'json'
+      )},
+
+      # JRD request
+      jrd => sub { $c->render(
+	status => $status,
+	data   => $head_data // $xrd->to_json,
+	format => 'jrd'
+      )},
+
+      # XML default
+      any => sub { $c->render(
+	status => $status,
+	data   => $head_data // $xrd->to_pretty_xml,
+	format => 'xrd'
+      )}
+    );
+  };
+
+  # Add DEPRECATED 'render_xrd' helper
   $mojo->helper(
     render_xrd => sub {
-      my ($c, $xrd, $res) = @_;
+      deprecated 'render_xrd is deprecated in favor of reply->xrd';
+      $reply_xrd->(@_)
+    }
+  );
 
-      # Define xrd or jrd
-      unless ($c->stash('format')) {
-	$c->stash('format' => scalar $c->param('format'));
-      };
-
-      # Add CORS header
-      $c->res->headers->header(
-	'Access-Control-Allow-Origin' => '*'
-      );
-
-      my $status = 200;
-
-      # Not found
-      if (!defined $xrd || !ref($xrd)) {
-	$status = 404;
-	$xrd = $c->helpers->new_xrd;
-	$xrd->subject("$res") if $res;
-      }
-
-      # rel parameter
-      elsif ($c->param('rel')) {
-
-	# Clone and filter relations
-	$xrd = $xrd->filter_rel( $c->every_param('rel') );
-      };
-
-      my $head_data = $c->req->method eq 'HEAD' ? '' : undef;
-
-      # content negotiation
-      return $c->respond_to(
-
-	# JSON request
-	json => sub { $c->render(
-	  status => $status,
-	  data   => $head_data // $xrd->to_json,
-	  format => 'json'
-	)},
-
-	# JRD request
-	jrd => sub { $c->render(
-	  status => $status,
-	  data   => $head_data // $xrd->to_json,
-	  format => 'jrd'
-	)},
-
-	# XML default
-	any => sub { $c->render(
-	  status => $status,
-	  data   => $head_data // $xrd->to_pretty_xml,
-	  format => 'xrd'
-	)}
-      );
-    });
+  # Add 'reply->xrd' helper
+  $mojo->helper( 'reply.xrd' => $reply_xrd);
 
   # Add 'get_xrd' helper
   $mojo->helper( get_xrd => \&_get_xrd );
@@ -294,7 +303,7 @@ Mojolicious::Plugin::XRD - XRD Document Handling with Mojolicious
   $xrd->link(profile => '/me.html');
 
   # Render as XRD or JRD, depending on request
-  $c->render_xrd($xrd);
+  $c->reply->xrd($xrd);
 
   # Content-Type: application/xrd+xml
   # <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -396,13 +405,13 @@ L<Mojo::IOLoop::Delay>.
 B<This method is experimental and may change wihout warnings.>
 
 
-=head2 render_xrd
+=head2 reply->xrd
 
   # In Controllers
-  $self->render_xrd( $xrd );
-  $self->render_xrd( undef, 'acct:acron@sojolicio.us' );
+  $self->reply->xrd( $xrd );
+  $self->reply->xrd( undef, 'acct:acron@sojolicio.us' );
 
-The helper C<render_xrd> renders an XRD object either
+The helper C<reply-E<gt>xrd> renders an XRD object either
 in C<xml> or in C<json> notation, depending on the request.
 If an XRD object is empty, it renders a C<404> error
 and accepts a second parameter as the subject of the error
@@ -430,7 +439,7 @@ L<Mojolicious::Plugin::XML::Loy>.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2011-2015, L<Nils Diewald|http://nils-diewald.de/>.
+Copyright (C) 2011-2016, L<Nils Diewald|http://nils-diewald.de/>.
 
 This program is free software, you can redistribute it
 and/or modify it under the terms of the Artistic License version 2.0.

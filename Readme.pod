@@ -16,7 +16,7 @@ Mojolicious::Plugin::XRD - XRD Document Handling with Mojolicious
   $xrd->link(profile => '/me.html');
 
   # Render as XRD or JRD, depending on request
-  $c->render_xrd($xrd);
+  $c->reply->xrd($xrd);
 
   # Content-Type: application/xrd+xml
   # <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -118,13 +118,13 @@ L<Mojo::IOLoop::Delay>.
 B<This method is experimental and may change wihout warnings.>
 
 
-=head2 render_xrd
+=head2 reply->xrd
 
   # In Controllers
-  $self->render_xrd( $xrd );
-  $self->render_xrd( undef, 'acct:acron@sojolicio.us' );
+  $self->reply->xrd( $xrd );
+  $self->reply->xrd( undef, 'acct:acron@sojolicio.us' );
 
-The helper C<render_xrd> renders an XRD object either
+The helper C<reply-E<gt>xrd> renders an XRD object either
 in C<xml> or in C<json> notation, depending on the request.
 If an XRD object is empty, it renders a C<404> error
 and accepts a second parameter as the subject of the error
@@ -152,7 +152,7 @@ L<Mojolicious::Plugin::XML::Loy>.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2011-2015, L<Nils Diewald|http://nils-diewald.de/>.
+Copyright (C) 2011-2016, L<Nils Diewald|http://nils-diewald.de/>.
 
 This program is free software, you can redistribute it
 and/or modify it under the terms of the Artistic License version 2.0.
