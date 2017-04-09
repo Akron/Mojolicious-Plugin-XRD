@@ -1,6 +1,9 @@
+0.18 2017-04-09
+        - Removed deprecated is_status_class() method.
+
 0.17 2016-07-21
         - Added reply->xrd.
-	- Deprecated render_xrd in favor of reply->xrd.
+        - Deprecated render_xrd in favor of reply->xrd.
 
 0.16 2015-05-26
         - Updated to recent versions of Mojolicious.
@@ -16,7 +19,7 @@
 
 0.12 2014-12-09
         - Remove deprecated oo-json usage.
-	- Remove route definitions per "route".
+        - Remove route definitions per "route".
 
 0.11 2014-10-11
         - Fix minimum requirement in makefile.
@@ -29,20 +32,20 @@
 
 0.08 2014-08-18
         - Update to Mojolicious 5.29.
-	- Using indirect helper object.
-	- Fixed License issue (now coherent Artistic License 2.0).
+        - Using indirect helper object.
+        - Fixed License issue (now coherent Artistic License 2.0).
 
 0.07 2013-08-03
         - Update to Mojolicious 4.23.
 
 0.06 2013-04-15
         - Trim tail of undefined values.
-	- Support HEAD method.
+        - Support HEAD method.
 
 0.05 2013-04-15
         - Raised max_redirections to 10.
-	- Lowerded connect_timeout to 7.
-	- Some async tests.
+        - Lowerded connect_timeout to 7.
+        - Some async tests.
 
 0.04 2013-04-07
         - Added headers to get_xrd().
@@ -53,7 +56,7 @@
 
 0.02 2013-03-28
         - Improved documentation.
-	- Small code improvements.
+        - Small code improvements.
 
 0.01 2013-03-27
         - Separation from Sojolicious package.

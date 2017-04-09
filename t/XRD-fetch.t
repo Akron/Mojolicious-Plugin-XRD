@@ -27,35 +27,36 @@ $app->get_xrd(
   });
 
 pass('No life tests');
-
 done_testing(1);
 exit;
 
-my ($xrd, $headers) = $app->get_xrd('//yahoo.com' . $wk);
+my ($xrd, $headers);
 
-is($xrd->subject, 'yahoo.com', 'Title');
-is($headers->content_type, 'text/plain; charset=utf-8', 'Content Type');
-
-is($headers->content_length, 998, 'Content Length');
-
-is($app->get_xrd('//yahoo.com' . $wk)->subject, 'yahoo.com', 'Title');
-ok(!$app->get_xrd('https://yahoo.com' . $wk), 'Not found for secure');
-
-
-$app->get_xrd(
-  'https://yahoo.com' . $wk => sub {
-    ok(!$_[0], 'Insecure');
-  });
-
-$app->get_xrd(
-  '//yahoo.com' . $wk => sub {
-    my $xrd = shift;
-
-    is($xrd->link('hub')->attr('href'),
-       'http://yhub.yahoo.com',
-       'Correct template');
-    is($xrd->subject, 'yahoo.com', 'Title');
-  });
+# ($xrd, $headers) = $app->get_xrd('//yahoo.com' . $wk);
+#
+#is($xrd->subject, 'yahoo.com', 'Title');
+#is($headers->content_type, 'text/plain; charset=utf-8', 'Content Type');
+#
+#is($headers->content_length, 998, 'Content Length');
+#
+#is($app->get_xrd('//yahoo.com' . $wk)->subject, 'yahoo.com', 'Title');
+#ok(!$app->get_xrd('https://yahoo.com' . $wk), 'Not found for secure');
+#
+#
+#$app->get_xrd(
+#  'https://yahoo.com' . $wk => sub {
+#    ok(!$_[0], 'Insecure');
+#  });
+#
+#$app->get_xrd(
+#  '//yahoo.com' . $wk => sub {
+#    my $xrd = shift;
+#
+#    is($xrd->link('hub')->attr('href'),
+#       'http://yhub.yahoo.com',
+#       'Correct template');
+#    is($xrd->subject, 'yahoo.com', 'Title');
+#  });
 
 $app->get_xrd(
   '//e14n.com' . $wk => sub {

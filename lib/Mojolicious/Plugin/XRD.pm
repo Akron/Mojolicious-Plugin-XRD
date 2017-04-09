@@ -2,7 +2,7 @@ package Mojolicious::Plugin::XRD;
 use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::Util qw/quote deprecated/;
 
-our $VERSION = '0.17';
+our $VERSION = '0.18';
 
 # Todo: Support
 #  $self->reply->xrd( $xrd => {
@@ -70,23 +70,23 @@ sub register {
 
       # JSON request
       json => sub { $c->render(
-	status => $status,
-	data   => $head_data // $xrd->to_json,
-	format => 'json'
+        status => $status,
+        data   => $head_data // $xrd->to_json,
+        format => 'json'
       )},
 
       # JRD request
       jrd => sub { $c->render(
-	status => $status,
-	data   => $head_data // $xrd->to_json,
-	format => 'jrd'
+        status => $status,
+        data   => $head_data // $xrd->to_json,
+        format => 'jrd'
       )},
 
       # XML default
       any => sub { $c->render(
-	status => $status,
-	data   => $head_data // $xrd->to_pretty_xml,
-	format => 'xrd'
+        status => $status,
+        data   => $head_data // $xrd->to_pretty_xml,
+        format => 'xrd'
       )}
     );
   };
@@ -166,7 +166,7 @@ sub _get_xrd {
     # Transaction was not successful
     return unless $xrd_res = $tx->success;
 
-    unless ($xrd_res->is_status_class(200)) {
+    unless ($xrd_res->is_success) {
 
       # Only support secure retrieval
       return if $secure;
@@ -187,7 +187,7 @@ sub _get_xrd {
       return unless $xrd_res = $tx->success;
 
       # Retrieval was successful
-      return unless $xrd_res->is_status_class(200);
+      return unless $xrd_res->is_success;
     };
 
     # Parse xrd document
@@ -216,26 +216,26 @@ sub _get_xrd {
       # Get response
       if (my $xrd_res = $tx->success) {
 
-	# Fine
-	if ($xrd_res->is_status_class(200)) {
+        # Fine
+        if ($xrd_res->is_success) {
 
-	  # Parse xrd document
-	  $xrd = $h->new_xrd($xrd_res->body) or return $cb->(undef);
+          # Parse xrd document
+          $xrd = $h->new_xrd($xrd_res->body) or return $cb->(undef);
 
-	  # Filter relations
-	  $xrd = $xrd->filter_rel($rel) if $rel;
+          # Filter relations
+          $xrd = $xrd->filter_rel($rel) if $rel;
 
-	  # Send to callback
-	  return $cb->($xrd, $xrd_res->headers->clone);
-	};
+          # Send to callback
+          return $cb->($xrd, $xrd_res->headers->clone);
+        };
 
-	# Only support secure retrieval
-	return $cb->(undef) if $secure;
+        # Only support secure retrieval
+        return $cb->(undef) if $secure;
       }
 
       # Fail
       else {
-	return $cb->(undef);
+        return $cb->(undef);
       };
 
       # Was already insecure
@@ -243,34 +243,34 @@ sub _get_xrd {
 
       # Try http with redirects
       $delay->steps(
-	sub {
-	  my $delay = shift;
+        sub {
+          my $delay = shift;
 
-	  $resource->scheme('http');
+          $resource->scheme('http');
 
-	  # Get with http and redirects
-	  $ua->max_redirects($UA_MAX_REDIRECTS);
-	  $ua->get($resource => $header => $delay->begin );
-	},
-	sub {
-	  my $delay = shift;
+          # Get with http and redirects
+          $ua->max_redirects($UA_MAX_REDIRECTS);
+          $ua->get($resource => $header => $delay->begin );
+        },
+        sub {
+          my $delay = shift;
 
-	  # Transaction was successful
-	  if (my $xrd_res = pop->success) {
+          # Transaction was successful
+          if (my $xrd_res = pop->success) {
 
-	    # Parse xrd document
-	    $xrd = $h->new_xrd($xrd_res->body) or return $cb->(undef);
+            # Parse xrd document
+            $xrd = $h->new_xrd($xrd_res->body) or return $cb->(undef);
 
-	    # Filter relations
-	    $xrd = $xrd->filter_rel($rel) if $rel;
+            # Filter relations
+            $xrd = $xrd->filter_rel($rel) if $rel;
 
-	    # Send to callback
-	    return $cb->($xrd, $xrd_res->headers->clone);
-	  };
+            # Send to callback
+            return $cb->($xrd, $xrd_res->headers->clone);
+          };
 
-	  # Fail
-	  return $cb->(undef);
-	});
+          # Fail
+          return $cb->(undef);
+        });
     }
   );
 
@@ -439,7 +439,7 @@ L<Mojolicious::Plugin::XML::Loy>.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2011-2016, L<Nils Diewald|http://nils-diewald.de/>.
+Copyright (C) 2011-2017, L<Nils Diewald|http://nils-diewald.de/>.
 
 This program is free software, you can redistribute it
 and/or modify it under the terms of the Artistic License version 2.0.

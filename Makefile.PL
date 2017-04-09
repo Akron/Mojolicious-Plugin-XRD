@@ -13,7 +13,7 @@ WriteMakefile(
     'Test::More' => 0
   },
   PREREQ_PM => {
-    'Mojolicious' => 6.00,
+    'Mojolicious' => 7.13,
     'Mojolicious::Plugin::XML::Loy' => 0.13,
     'XML::Loy' => 0.40
   },
